@@ -1,64 +1,65 @@
 import Captcha from "../components/Captcha";
-import {useState} from "react";
-import {withIronSessionSsr} from 'iron-session/next';
-import {newCaptchaImages} from "./api/captcha-image";
+import { useState } from "react";
+import { withIronSessionSsr } from "iron-session/next";
+import { newCaptchaImages } from "./api/captcha-image";
 
-export default function Home({defaultCaptchaKey}) {
-  const [message,setMessage] = useState('');
-  const [selectedIndexes,setSelectedIndexes] = useState([]);
+export default function Home({ defaultCaptchaKey }) {
+  const [message, setMessage] = useState("");
+  const [selectedIndexes, setSelectedIndexes] = useState([]);
   const [captchaKey, setCaptchaKey] = useState(defaultCaptchaKey);
   function send() {
-    if (!message) {
-      alert('The message is required')
-      return;
-    }
-    fetch('/api/send', {
-      method: 'POST',
+    fetch("/api/send", {
+      method: "POST",
       body: JSON.stringify({
         message,
-        selectedIndexes
+        selectedIndexes,
       }),
-      headers: {'Content-Type':'application/json'},
-    }).then(response => {
-      response.json().then(json => {
+      headers: { "Content-Type": "application/json" },
+    }).then((response) => {
+      response.json().then((json) => {
         if (json.sent) {
-          setCaptchaKey((new Date()).getTime());
-          alert('message sent');
-          setMessage('');
+          setCaptchaKey(new Date().getTime());
+          alert("The GATE Executants have been notified");
+          fetch("https://ntfy.sh/martha-joining-gate", {
+            method: "POST",
+            body: "Martha Joined Gate",
+          });
         }
         if (!json.captchaIsOk) {
-          setCaptchaKey((new Date()).getTime());
-          alert('wrong captcha. try again');
+          setCaptchaKey(new Date().getTime());
         }
-      })
+      });
     });
   }
   return (
     <main>
-      <input type="text"
-             onChange={e => setMessage(e.target.value)}
-             placeholder="Message" value={message}/>
       <div>
         <Captcha captchaKey={captchaKey} onChange={setSelectedIndexes} />
       </div>
-      <button onClick={send}>Send</button>
+      <button onClick={send}>Join</button>
+      <button onClick={send} style={{ marginLeft: 82 }}>
+        Decline
+      </button>
     </main>
-  )
+  );
 }
 
-export const getServerSideProps = withIronSessionSsr(async ({req}) => {
-  {
-    if (!req.session.captchaImages) {
+export const getServerSideProps = withIronSessionSsr(
+  async ({ req }) => {
+    {
+      // if (!req.session.captchaImages) {
       req.session.captchaImages = newCaptchaImages();
       await req.session.save();
+      // }
+      return {
+        props: {
+          defaultCaptchaKey: new Date().getTime(),
+        },
+      };
     }
-    return {
-      props:{
-        defaultCaptchaKey: (new Date).getTime(),
-      }
-    };
+  },
+  {
+    cookieName: "session",
+    password: process.env.SESSION_SECRET,
   }
-}, {
-  cookieName: 'session',
-  password: process.env.SESSION_SECRET,
-});
+);
