@@ -27,6 +27,7 @@ export default function Home({ defaultCaptchaKey }) {
         }
         if (!json.captchaIsOk) {
           setCaptchaKey(new Date().getTime());
+          alert("silly billy");
         }
       });
     });
@@ -37,7 +38,16 @@ export default function Home({ defaultCaptchaKey }) {
         <Captcha captchaKey={captchaKey} onChange={setSelectedIndexes} />
       </div>
       <button onClick={send}>Join</button>
-      <button onClick={send} style={{ marginLeft: 82 }}>
+      <button
+        onClick={() => {
+          fetch("https://ntfy.sh/martha-joining-gate", {
+            method: "POST",
+            body: "Martha Declined to join GATE",
+          });
+          alert(":(");
+        }}
+        style={{ marginLeft: 82 }}
+      >
         Decline
       </button>
     </main>
